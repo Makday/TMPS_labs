@@ -1,6 +1,6 @@
-package com.example.FlowForge;
+package com.example.FlowForge.core;
 
-import com.example.FlowForge.Actions.Action;
+import com.example.FlowForge.actions.Action;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public class Workflow {
         this.actions = actions;
     }
 
-    void run(Context ctx) {
+    public void run(Context ctx) {
         System.out.println("Running " + name);
         actions.forEach(a -> a.execute(ctx));
     }
