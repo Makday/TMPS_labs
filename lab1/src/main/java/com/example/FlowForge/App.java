@@ -1,9 +1,9 @@
-package com.example.FlowForge;
+package com.example.flowforge;
 
-import com.example.FlowForge.actions.LogAction;
-import com.example.FlowForge.core.Context;
-import com.example.FlowForge.core.Workflow;
-import com.example.FlowForge.events.EventBus;
+import com.example.flowforge.actions.LogAction;
+import com.example.flowforge.core.Context;
+import com.example.flowforge.core.Workflow;
+import com.example.flowforge.events.EventBus;
 
 import java.util.List;
 

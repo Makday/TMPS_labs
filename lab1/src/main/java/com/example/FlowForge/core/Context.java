@@ -1,4 +1,4 @@
-package com.example.FlowForge.core;
+package com.example.flowforge.core;
 
 import java.util.HashMap;
 import java.util.Map;

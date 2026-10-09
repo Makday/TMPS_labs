@@ -1,6 +1,6 @@
-package com.example.FlowForge.events;
+package com.example.flowforge.events;
 
-import com.example.FlowForge.core.Context;
+import com.example.flowforge.core.Context;
 
 public interface EventListener {
     void onEvent(String eventType, Context ctx);

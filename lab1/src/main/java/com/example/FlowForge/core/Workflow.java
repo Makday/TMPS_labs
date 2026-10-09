@@ -1,6 +1,6 @@
-package com.example.FlowForge.core;
+package com.example.flowforge.core;
 
-import com.example.FlowForge.actions.Action;
+import com.example.flowforge.actions.Action;
 
 import java.util.List;
 

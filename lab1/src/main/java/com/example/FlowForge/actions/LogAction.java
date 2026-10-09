@@ -1,6 +1,6 @@
-package com.example.FlowForge.actions;
+package com.example.flowforge.actions;
 
-import com.example.FlowForge.core.Context;
+import com.example.flowforge.core.Context;
 
 public class LogAction implements Action{
     private final String message;

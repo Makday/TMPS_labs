@@ -1,6 +1,6 @@
-package com.example.FlowForge.events;
+package com.example.flowforge.events;
 
-import com.example.FlowForge.core.Context;
+import com.example.flowforge.core.Context;
 
 import java.util.ArrayList;
 import java.util.HashMap;
