@@ -1,0 +1,75 @@
+{
+  "lockfile_version": "1",
+  "packages": {
+    "github:NixOS/nixpkgs/nixpkgs-unstable": {
+      "last_modified": "2026-10-08T19:21:32Z",
+      "resolved": "github:NixOS/nixpkgs/8edc0c72e3a38faf5434e40d1f19431125fe4b30?lastModified=1791487292&narHash=sha256-tqM7xDEsaeK1p6VvRygeZ9LkQRpUUkbRT02BHv6hnTM%3D"
+    },
+    "jdk@25": {
+      "last_modified": "2026-09-29T03:29:29Z",
+      "resolved": "github:NixOS/nixpkgs/b6c8664de9b6cc07fe5666a29f91884ba81197c4#jdk25",
+      "source": "devbox-search",
+      "version": "25.0.3",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/yyd95rx1jb8f3khwncwzvxrwif5397i4-zulu-ca-jdk-25.0.3",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/yyd95rx1jb8f3khwncwzvxrwif5397i4-zulu-ca-jdk-25.0.3"
+        }
+      }
+    },
+    "maven@latest": {
+      "last_modified": "2026-10-08T19:21:32Z",
+      "resolved": "github:NixOS/nixpkgs/8edc0c72e3a38faf5434e40d1f19431125fe4b30#maven",
+      "source": "devbox-search",
+      "version": "3.9.16",
+      "systems": {
+        "aarch64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/zl0w6r43a4j1hscfbv90njp9pmp7p9a2-maven-3.9.16",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/zl0w6r43a4j1hscfbv90njp9pmp7p9a2-maven-3.9.16"
+        },
+        "aarch64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/m4lbnfzy91rxv4cn116y8m9hv24pcfy5-maven-3.9.16",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/m4lbnfzy91rxv4cn116y8m9hv24pcfy5-maven-3.9.16"
+        },
+        "x86_64-darwin": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/334davh2hdmg5ma9pxxz5vpz39dji3vs-maven-3.9.16",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/334davh2hdmg5ma9pxxz5vpz39dji3vs-maven-3.9.16"
+        },
+        "x86_64-linux": {
+          "outputs": [
+            {
+              "name": "out",
+              "path": "/nix/store/k822cf1yqjgjy2p9fi7jk09ykvzq3zm5-maven-3.9.16",
+              "default": true
+            }
+          ],
+          "store_path": "/nix/store/k822cf1yqjgjy2p9fi7jk09ykvzq3zm5-maven-3.9.16"
+        }
+      }
+    }
+  }
+}
