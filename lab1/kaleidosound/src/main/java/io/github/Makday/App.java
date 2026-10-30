@@ -1,10 +1,11 @@
 package io.github.Makday;
 
-/**
- * Hello world!
- */
 public class App {
-    public static void main(String[] args) {
-        System.out.println("Hello World!");
+  public static void main(String[] args) {
+    if (args.length != 2) {
+      System.out.println("Usage: java Main <input> <output>");
+      return;
     }
+    new ConverterFacade().convert(args[0], args[1]);
+  }
 }
