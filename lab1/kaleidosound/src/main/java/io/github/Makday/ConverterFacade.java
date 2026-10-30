@@ -1,11 +1,14 @@
 package io.github.Makday;
 
-class ConverterFacade {
-  private final Converter converter = new FfmpegConverter();
+import io.github.Makday.converter.Converter;
+import io.github.Makday.converter.ConverterFactory;
+import io.github.Makday.settings.ConversionSettings;
 
-  public void convert(String input, String output) {
+class ConverterFacade {
+  public void convert(String input, String output, ConversionSettings settings) {
     try {
-      converter.convert(input, output);
+      Converter converter = ConverterFactory.create(output);
+      converter.convert(input, output, settings);
       System.out.println("Done: " + output);
     } catch (Exception e) {
       System.err.println("Conversion failed: " + e.getMessage());
