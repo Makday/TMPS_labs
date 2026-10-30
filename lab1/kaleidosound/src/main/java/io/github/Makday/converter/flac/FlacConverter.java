@@ -1,6 +1,8 @@
-package io.github.Makday.converter;
+package io.github.Makday.converter.flac;
 
 import java.util.List;
+
+import io.github.Makday.converter.ffmpeg.FfmpegConverter;
 
 class FlacConverter extends FfmpegConverter {
   @Override

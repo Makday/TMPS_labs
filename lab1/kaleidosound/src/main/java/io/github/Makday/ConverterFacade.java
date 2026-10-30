@@ -3,10 +3,10 @@ package io.github.Makday;
 import java.util.Map;
 
 import io.github.Makday.converter.ConverterCreator;
-import io.github.Makday.converter.DefaultConverterCreator;
-import io.github.Makday.converter.FlacConverterCreator;
-import io.github.Makday.converter.Mp3ConverterCreator;
-import io.github.Makday.converter.WavConverterCreator;
+import io.github.Makday.converter.ffmpeg.DefaultConverterCreator;
+import io.github.Makday.converter.flac.FlacConverterCreator;
+import io.github.Makday.converter.mp3.Mp3ConverterCreator;
+import io.github.Makday.converter.wav.WavConverterCreator;
 import io.github.Makday.settings.ConversionSettings;
 
 class ConverterFacade {

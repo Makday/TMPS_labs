@@ -1,10 +1,11 @@
-package io.github.Makday.converter;
+package io.github.Makday.converter.ffmpeg;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.github.Makday.config.AppConfig;
+import io.github.Makday.converter.Converter;
 import io.github.Makday.settings.ConversionSettings;
 
 public class FfmpegConverter implements Converter {

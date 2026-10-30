@@ -1,6 +1,8 @@
-package io.github.Makday.converter;
+package io.github.Makday.converter.wav;
 
 import java.util.List;
+
+import io.github.Makday.converter.ffmpeg.FfmpegConverter;
 
 class WavConverter extends FfmpegConverter {
   @Override
