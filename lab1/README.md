@@ -84,11 +84,19 @@ kaleidosound/
     │   │   └── ConversionSettings.java    # Builder
     │   └── converter/
     │       ├── Converter.java             # product interface
-    │       ├── ConverterFactory.java      # Factory Method
-    │       ├── FfmpegConverter.java       # base converter (runs ffmpeg)
-    │       ├── Mp3Converter.java          # concrete products
-    │       ├── WavConverter.java
-    │       └── FlacConverter.java
+    │       ├── ConverterCreator.java      # Factory Method creator
+    │       ├── ffmpeg/
+    │       │   ├── FfmpegConverter.java   # base converter (runs ffmpeg)
+    │       │   └── DefaultConverterCreator.java
+    │       ├── flac/
+    │       │   ├── FlacConverter.java     # concrete product
+    │       │   └── FlacConverterCreator.java
+    │       ├── mp3/
+    │       │   ├── Mp3Converter.java      # concrete product
+    │       │   └── Mp3ConverterCreator.java
+    │       └── wav/
+    │           ├── WavConverter.java      # concrete product
+    │           └── WavConverterCreator.java
     └── test/java/io/github/Makday/
         └── AppTest.java
 ```
@@ -101,8 +109,10 @@ classDiagram
     class ConverterFacade {
         +convert(input, output, settings)
     }
-    class ConverterFactory {
-        +create(outputPath)$ Converter
+    class ConverterCreator {
+        <<abstract>>
+        #createConverter() Converter
+        +convert(input, output, settings)
     }
     class Converter {
         <<interface>>
@@ -112,6 +122,10 @@ classDiagram
         #codecArgs() List~String~
         +convert(input, output, settings)
     }
+    class DefaultConverterCreator
+    class Mp3ConverterCreator
+    class WavConverterCreator
+    class FlacConverterCreator
     class Mp3Converter
     class WavConverter
     class FlacConverter
@@ -133,8 +147,16 @@ classDiagram
     App --> Builder
     App --> ConverterFacade
     Builder ..> ConversionSettings : creates
-    ConverterFacade --> ConverterFactory
-    ConverterFactory ..> Converter : creates
+    ConverterFacade --> ConverterCreator : uses
+    ConverterCreator ..> Converter : creates
+    ConverterCreator <|-- DefaultConverterCreator
+    ConverterCreator <|-- Mp3ConverterCreator
+    ConverterCreator <|-- WavConverterCreator
+    ConverterCreator <|-- FlacConverterCreator
+    DefaultConverterCreator ..> FfmpegConverter : creates
+    Mp3ConverterCreator ..> Mp3Converter : creates
+    WavConverterCreator ..> WavConverter : creates
+    FlacConverterCreator ..> FlacConverter : creates
     Converter <|.. FfmpegConverter
     FfmpegConverter <|-- Mp3Converter
     FfmpegConverter <|-- WavConverter
@@ -145,7 +167,7 @@ classDiagram
  
 ### General code explanation
  
-The flow of a conversion is the following: `App` parses the command line arguments and builds a `ConversionSettings` object, then hands everything to `ConverterFacade`. The facade asks `ConverterFactory` for a `Converter` suited for the requested output format, and the converter launches `ffmpeg` as an external process.
+The flow of a conversion is the following: `App` parses the command line arguments and builds a `ConversionSettings` object, then hands everything to `ConverterFacade`. The facade looks up a `ConverterCreator` suited for the requested output format, the creator instantiates the matching `Converter`, and the converter launches `ffmpeg` as an external process.
  
 **Entry point.** `App` reads the mandatory input/output paths and the optional bitrate, sample rate and channel count:
  
@@ -165,10 +187,16 @@ new ConverterFacade().convert(args[0], args[1], builder.build());
  
 ```java
 class ConverterFacade {
+  private static final Map<String, ConverterCreator> CREATORS = Map.of(
+      "mp3", new Mp3ConverterCreator(),
+      "wav", new WavConverterCreator(),
+      "flac", new FlacConverterCreator());
+
   public void convert(String input, String output, ConversionSettings settings) {
     try {
-      Converter converter = ConverterFactory.create(output);
-      converter.convert(input, output, settings);
+      String ext = output.substring(output.lastIndexOf('.') + 1).toLowerCase();
+      ConverterCreator creator = CREATORS.getOrDefault(ext, new DefaultConverterCreator());
+      creator.convert(input, output, settings);
       System.out.println("Done: " + output);
     } catch (Exception e) {
       System.err.println("Conversion failed: " + e.getMessage());
@@ -329,42 +357,57 @@ public List<String> toFfmpegArgs() {
 - `App` can set only those parameters the user typed on the command line, which maps naturally onto the builder's step-by-step API.
 - The resulting object is immutable (`final` fields, no setters), so it can safely be passed around and reused.
 - New options (e.g. volume, trim) can be added to the builder without changing existing calls.
-### 3. Factory Method — `ConverterFactory`
+### 3. Factory Method — `ConverterCreator`
  
-**Intent.** Define an interface for creating an object, but let the creation logic decide which concrete class to instantiate, so that client code depends only on the abstraction.
+**Intent.** Define an interface for creating an object, but let subclasses decide which class to instantiate, so that client code depends only on the abstraction.
  
-**Where and how.** The client (`ConverterFacade`) needs *a* `Converter` but should not know which one. `ConverterFactory.create()` selects the concrete class by the extension of the output file:
+**Where and how.** The client (`ConverterFacade`) needs *a* `Converter` but should not know which concrete product to instantiate. `ConverterCreator` declares the factory method `createConverter()` and a `convert()` operation that delegates to the created product:
  
 ```java
-public final class ConverterFactory {
-  private ConverterFactory() {
-  }
+public abstract class ConverterCreator {
+  protected abstract Converter createConverter();
  
-  public static Converter create(String outputPath) {
-    String ext = outputPath.substring(outputPath.lastIndexOf('.') + 1).toLowerCase();
-    return switch (ext) {
-      case "mp3" -> new Mp3Converter();
-      case "wav" -> new WavConverter();
-      case "flac" -> new FlacConverter();
-      default -> new FfmpegConverter();
-    };
+  public void convert(String input, String output, ConversionSettings settings)
+      throws IOException, InterruptedException {
+    createConverter().convert(input, output, settings);
   }
 }
 ```
  
-The products form a small hierarchy: the `Converter` interface, the base `FfmpegConverter`, and the package-private `Mp3Converter`, `WavConverter`, `FlacConverter`. The facade only ever sees the `Converter` interface:
+Each format supplies a concrete creator, for example:
  
 ```java
-Converter converter = ConverterFactory.create(output);
-converter.convert(input, output, settings);
+public class Mp3ConverterCreator extends ConverterCreator {
+  @Override
+  protected Converter createConverter() {
+    return new Mp3Converter();
+  }
+}
 ```
  
+`ConverterFacade` selects the creator by the extension of the output file and calls its inherited `convert()` method:
+ 
+```java
+private static final Map<String, ConverterCreator> CREATORS = Map.of(
+    "mp3", new Mp3ConverterCreator(),
+    "wav", new WavConverterCreator(),
+    "flac", new FlacConverterCreator());
+ 
+String ext = output.substring(output.lastIndexOf('.') + 1).toLowerCase();
+ConverterCreator creator = CREATORS.getOrDefault(ext, new DefaultConverterCreator());
+creator.convert(input, output, settings);
+```
+ 
+The products form a small hierarchy: the `Converter` interface, the base `FfmpegConverter`, and the package-private `Mp3Converter`, `WavConverter`, `FlacConverter`, each located next to its creator in the corresponding format folder. `DefaultConverterCreator` creates the plain `FfmpegConverter`. The facade only ever sees the `ConverterCreator` abstraction; the concrete product is returned as `Converter` inside the creator.
+ 
 **Why this way.**
-- The calling code does not contain any `if`/`switch` over formats and does not depend on concrete classes. The concrete converters are package-private, so they cannot even be referenced from outside the `converter` package, which enforces the use of the factory.
-- Adding a new format is local and cheap: write a new subclass overriding `codecArgs()` (e.g. `OggConverter` with `libvorbis`) and add one `case` line. Nothing else changes (Open/Closed Principle).
-- Unknown extensions fall back to the plain `FfmpegConverter`, which passes no explicit codec so that ffmpeg picks the default one for that container.
+- The facade works with creators through the `ConverterCreator` type and never references the concrete converter products.
+- The concrete products are package-private within their format packages, so they cannot be referenced from outside; client code must go through a creator.
+- Adding a new format is local and cheap: write a new converter overriding `codecArgs()` (e.g. `OggConverter` with `libvorbis`) and a matching creator, then add one entry to the facade's `CREATORS` map. (Open/Closed Principle)
+- Unknown extensions fall back to `DefaultConverterCreator`, which creates the plain `FfmpegConverter`; it passes no explicit codec so that ffmpeg picks the default one for that container.
 - Putting only the codec-specific part into `codecArgs()` avoids duplicating the process-launching code in every converter.
-**Remark.** Strictly speaking, the classic GoF *Factory Method* is a method that subclasses override to decide what to create. Here the creation method is `static` and chooses the product with a `switch`, which is the common *static factory method* (simple factory) variant of the pattern. The idea of the pattern (hiding the choice of the concrete class behind a creation method and returning an abstraction) is the same. The `codecArgs()` hook in `FfmpegConverter` additionally lets subclasses customize the algorithm in the manner of the Template Method pattern. If a strict GoF form is required, the creation could be moved into overridable methods of creator classes (e.g. `Mp3ConverterCreator`), at the price of more classes.
+ 
+**Remark.** This is the classic GoF *Factory Method*: `ConverterCreator` defines the creation method and each concrete creator overrides `createConverter()` to decide which product to instantiate. The `codecArgs()` hook in `FfmpegConverter` additionally lets subclasses customize the algorithm in the manner of the Template Method pattern.
  
 ### Summary of the patterns
  
@@ -372,7 +415,7 @@ converter.convert(input, output, settings);
 |---|---|---|
 | Singleton | `AppConfig` | One shared, consistently-read source of the ffmpeg path |
 | Builder | `ConversionSettings.Builder` | Readable creation of an immutable object with many optional parameters |
-| Factory Method | `ConverterFactory` | Choosing the right converter without coupling the client to concrete classes |
+| Factory Method | `ConverterCreator` and its subclasses | Choosing the right converter without coupling the client to concrete classes |
  
 `ConverterFacade` is a *structural* pattern (Facade) and is not part of the required three; it just gives the client one simple entry point to the subsystem.
  
@@ -418,7 +461,7 @@ Where each part comes from:
 | Part of the command | Produced by |
 |---|---|
 | `ffmpeg` | `AppConfig.INSTANCE.ffmpegPath()` (Singleton) |
-| `-codec:a libmp3lame` | `Mp3Converter.codecArgs()`, chosen by `ConverterFactory` from `.mp3` (Factory Method) |
+| `-codec:a libmp3lame` | `Mp3Converter.codecArgs()`, created by `Mp3ConverterCreator` selected from the `.mp3` entry in `ConverterFacade` (Factory Method) |
 | `-b:a 192k -ar 44100 -ac 2` | `ConversionSettings.toFfmpegArgs()` (Builder) |
  
 **Programmatic usage** of the patterns without the CLI:
@@ -430,8 +473,8 @@ ConversionSettings settings = new ConversionSettings.Builder()
     .channels(2)
     .build();
  
-Converter converter = ConverterFactory.create("song.mp3");
-converter.convert("song.wav", "song.mp3", settings);
+ConverterCreator creator = new Mp3ConverterCreator();
+creator.convert("song.wav", "song.mp3", settings);
 ```
  
 If `ffmpeg` fails (for instance, the input file does not exist), the exit code is checked and the facade prints the error instead of crashing:
@@ -446,8 +489,8 @@ In this laboratory work three creational design patterns were implemented in the
  
 - **Singleton** (`AppConfig`) provides a single, thread-safe point of access to the application configuration, here the location of the `ffmpeg` executable.
 - **Builder** (`ConversionSettings.Builder`) makes the creation of an immutable settings object with several optional parameters readable and extensible.
-- **Factory Method** (`ConverterFactory`) hides the choice of the concrete converter behind the `Converter` interface, so that supporting a new format only needs a new small subclass and one line in the factory.
-Together they made the code more flexible and easier to extend: formats, settings and configuration can evolve independently, and the client code (`ConverterFacade`, `App`) does not depend on how objects are created. The `Facade` additionally keeps the usage of the whole subsystem simple.
+- **Factory Method** (`ConverterCreator` and its subclasses) hides the choice of the concrete converter behind the `Converter` interface, so that supporting a new format only needs a new converter/creator pair and one entry in the facade's creator map.
+Together they made the code more flexible and easier to extend: formats, settings and configuration can evolve independently. `ConverterFacade` selects a concrete creator but never references the converter products, while `App` only depends on the facade. The `Facade` additionally keeps the usage of the whole subsystem simple.
  
 The current implementation delegates the real audio processing to `ffmpeg`, which is a temporary solution. When the pipeline is decomposed into its own stages (demuxer, decoder, filters, encoder, muxer), the patterns will be reused and the others from the list can be applied naturally: **Abstract Factory** to create a consistent family of decoder/encoder/muxer for a format, and **Prototype** to clone pre-configured settings or filter chains. Possible improvements for the current code are validation of the values in the builder (e.g. positive bitrate), named command-line options instead of positional ones, and passing `AppConfig` into converters to simplify testing.
  
