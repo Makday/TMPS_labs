@@ -5,12 +5,10 @@ import java.io.IOException;
 import io.github.Makday.converter.Converter;
 import io.github.Makday.settings.ConversionSettings;
 
-/** Decorator: adds elapsed-time reporting to any Converter. */
-public class TimingConverter implements Converter {
-  private final Converter delegate;
-
-  public TimingConverter(Converter delegate) {
-    this.delegate = delegate;
+/** Concrete decorator: reports elapsed time of the wrapped conversion. */
+public class TimingConverter extends ConverterDecorator {
+  public TimingConverter(Converter wrapped) {
+    super(wrapped);
   }
 
   @Override
@@ -18,7 +16,7 @@ public class TimingConverter implements Converter {
       throws IOException, InterruptedException {
     long start = System.nanoTime();
     try {
-      delegate.convert(input, output, settings);
+      super.convert(input, output, settings);
     } finally {
       System.out.printf("Took %d ms%n", (System.nanoTime() - start) / 1_000_000);
     }
