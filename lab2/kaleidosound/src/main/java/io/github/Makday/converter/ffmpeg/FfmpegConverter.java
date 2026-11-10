@@ -13,16 +13,20 @@ public class FfmpegConverter implements Converter {
     return List.of();
   }
 
-  @Override
-  public void convert(String input, String output, ConversionSettings settings)
-      throws IOException, InterruptedException {
+  /** Translates our domain call into the ffmpeg command line (the adaptee's interface). */
+  public List<String> buildCommand(String input, String output, ConversionSettings settings) {
     List<String> cmd = new ArrayList<>(List.of(
         AppConfig.INSTANCE.ffmpegPath(), "-y", "-loglevel", "error", "-i", input, "-vn"));
     cmd.addAll(codecArgs());
     cmd.addAll(settings.toFfmpegArgs());
     cmd.add(output);
+    return cmd;
+  }
 
-    ProcessBuilder pb = new ProcessBuilder(cmd);
+  @Override
+  public void convert(String input, String output, ConversionSettings settings)
+      throws IOException, InterruptedException {
+    ProcessBuilder pb = new ProcessBuilder(buildCommand(input, output, settings));
     pb.inheritIO();
     int exitCode = pb.start().waitFor();
     if (exitCode != 0) {
